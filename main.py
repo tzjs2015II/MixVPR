@@ -7,18 +7,22 @@ import utils
 from dataloaders.GSVCitiesDataloader import GSVCitiesDataModule
 from models import helper
 
+from spikingjelly.clock_driven import functional
+# faulthandler.enable()
 
 class VPRModel(pl.LightningModule):
     """This is the main model for Visual Place Recognition
     we use Pytorch Lightning for modularity purposes.
 
-    Args:
+    Args:helper
         pl (_type_): _description_
     """
 
     def __init__(self,
                 #---- Backbone
                 backbone_arch='resnet50',
+                # backbone_arch='Spikingformer',
+                
                 pretrained=True,
                 layers_to_freeze=1,
                 layers_to_crop=[],
@@ -222,20 +226,29 @@ class VPRModel(pl.LightningModule):
             self.log(f'{val_set_name}/R10', pitts_dict[10], prog_bar=False, logger=True)
         print('\n\n')
             
-            
+class ResetNetCallback(Callback):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+        # print("测试植入清空代码")
+        # 在每个batch训练结束后调用reset_net
+        functional.reset_net(pl_module)
+
+# class MyPrintingCallback(Callback):
+#     def on_train_start(self, trainer, pl_module):
+#         print("测试植入代码")
+
 if __name__ == '__main__':
     pl.utilities.seed.seed_everything(seed=190223, workers=True)
         
     datamodule = GSVCitiesDataModule(
-        batch_size=120,
+        batch_size=180,
         img_per_place=4,
         min_img_per_place=4,
         shuffle_all=False, # shuffle all images or keep shuffling in-city only
         random_sample_from_each_place=True,
         image_size=(320, 320),
-        num_workers=28,
+        num_workers=6,
         show_data_stats=True,
-        val_set_names=['pitts30k_val', 'pitts30k_test', 'msls_val'], # pitts30k_val, pitts30k_test, msls_val
+        val_set_names=['pitts30k_val', 'pitts30k_test', 'msls_val'] # pitts30k_val, pitts30k_test, msls_val
     )
     
     # examples of backbones
@@ -245,7 +258,8 @@ if __name__ == '__main__':
     # swinv2_base_window12to16_192to256_22kft1k
     model = VPRModel(
         #---- Encoder
-        backbone_arch='resnet50',
+        backbone_arch='resnet18',
+        # backbone_arch='Spikingformer',
         pretrained=True,
         layers_to_freeze=2,
         layers_to_crop=[4], # 4 crops the last resnet layer, 3 crops the 3rd, ...etc
@@ -261,11 +275,17 @@ if __name__ == '__main__':
         # agg_config={'in_channels': 2048,
         #             'out_channels': 2048},
 
-        agg_arch='MixVPR',
-        agg_config={'in_channels' : 1024,
+        # agg_arch='MixVPR',
+        # agg_arch='snnvpr',
+        agg_arch='snnvpr_v1',
+
+        agg_config={
+            # 'in_channels' : 1024,
+            'in_channels' : 256,
                 'in_h' : 20,
                 'in_w' : 20,
-                'out_channels' : 1024,
+                # 'out_channels' : 1024,
+                'out_channels' : 256,
                 'mix_depth' : 4,
                 'mlp_ratio' : 1,
                 'out_rows' : 4}, # the output dim will be (out_rows * out_channels)
@@ -291,14 +311,15 @@ if __name__ == '__main__':
     # model params saving using Pytorch Lightning
     # we save the best 3 models accoring to Recall@1 on pittsburg val
     checkpoint_cb = ModelCheckpoint(
-        monitor='pitts30k_val/R1',
+        monitor='msls_val/R1',
         filename=f'{model.encoder_arch}' +
-        '_epoch({epoch:02d})_step({step:04d})_R1[{pitts30k_val/R1:.4f}]_R5[{pitts30k_val/R5:.4f}]',
-        auto_insert_metric_name=False,
-        save_weights_only=True,
+        '_epoch({epoch:02d})_step({step:04d})_R1[{msls_val/R1:.4f}]_R5[{msls_val/R5:.4f}]',
+        auto_insert_metric_name=False,  
+        # save_weights_only=True,# 只保存模型权重，不保存梯度，如果需要断点恢复，需要保存梯度
+        save_weights_only=False,
         save_top_k=3,
         mode='max',)
-
+    
     #------------------
     # we instanciate a trainer
     trainer = pl.Trainer(
@@ -309,11 +330,21 @@ if __name__ == '__main__':
         precision=16, # we use half precision to reduce  memory usage
         max_epochs=80,
         check_val_every_n_epoch=1, # run validation every epoch
-        callbacks=[checkpoint_cb],# we only run the checkpointing callback (you can add more)
+        callbacks=[checkpoint_cb
+                #    ,MyPrintingCallback()
+                   ,ResetNetCallback()
+                    ],# we only run the checkpointing callback (you can add more)
         reload_dataloaders_every_n_epochs=1, # we reload the dataset to shuffle the order
         log_every_n_steps=20,
+        enable_progress_bar=True,
+        auto_lr_find=True,
+        # resume_from_checkpoint = 
+        # checkpoint_callback=True,
         # fast_dev_run=True # uncomment or dev mode (only runs a one iteration train and validation, no checkpointing).
     )
-
+    
     # we call the trainer, we give it the model and the datamodule
     trainer.fit(model=model, datamodule=datamodule)
+
+
+

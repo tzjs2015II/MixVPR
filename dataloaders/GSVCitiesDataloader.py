@@ -88,14 +88,14 @@ class GSVCitiesDataModule(pl.LightningDataModule):
             'batch_size': self.batch_size,
             'num_workers': self.num_workers,
             'drop_last': False,
-            'pin_memory': True,
+            'pin_memory': False,
             'shuffle': self.shuffle_all}
 
         self.valid_loader_config = {
             'batch_size': self.batch_size,
             'num_workers': self.num_workers//2,
             'drop_last': False,
-            'pin_memory': True,
+            'pin_memory': False,
             'shuffle': False}
 
     def setup(self, stage):

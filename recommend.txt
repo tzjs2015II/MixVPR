@@ -1,0 +1,46 @@
+创建环境到指定目录
+conda create -p /data2/wgl/myenv/VPR python=3.11
+
+
+激活指定目录环境，注：最终文件夹名会被解析成vscode的环境名
+conda activate /data2/wgl/myenv/VPR
+
+临时阿里PIP源，注：阿里不好用
+pip install -i http://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
+
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ faiss-gpu==1.7.2
+
+pip install faiss-gpu==1.7.2 -i https://mirrors.aliyun.com/pypi/simple/
+
+
+pip install -r /mnt/c/Users/MRLin/Documents/GitHub/MixVPR/requirements.txt
+
+清华pip源
+https://pypi.tuna.tsinghua.edu.cn/simple/
+
+pip install -r requirements.txt
+
+通过conda绝对路径执行Python文件
+/data2/wgl/myenv/VPR/bin/python /data2/wgl/MixVPR/models/backbones/test.py
+
+如果pip和Python（conda）路径不匹配的情况下，直接通过conda环境下的pip模块执行pip操作
+/data2/wgl/myenv/VPR/bin/python -m pip install -r requirements.txt -i https://mirrors.ustc.edu.cn/pypi/simple
+
+注：pytorch-lightning==1.8.3版本有问题，更新到1.8.4
+pip install pytorch-lightning==1.8.3 -i https://mirrors.ustc.edu.cn/pypi/simple
+
+/data2/wgl/myenv/VPR/bin/python -m pip install cupy-cuda11x
+
+
+压缩文件并打包数据集
+zip -r -s 10g /data2/wgl/data/Mapillary.zip /data2/xzy/CNN_AE/raw_data/Mapillary/
+
+zip -r -s 10g /data2/wgl/data/msls_val.zip /data2/xzy/MixVPR/datasets/msls_val/
+
+zip -r -s 10g /data2/wgl/data/Pittsburgh.zip /data2/xzy/CNN_AE/raw_data/Pittsburgh/
+
+后台执行训练代码，不被终端影响，并且输出训练日志到固定文件
+nohup env CUDA_VISIBLE_DEVICES=2 /data2/wgl/myenv/VPR/bin/python /data2/wgl/MixVPR/main_2.py > /data2/wgl/MixVPR/run_log/run_2.log 2>&1 &
+
+
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple

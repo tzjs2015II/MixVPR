@@ -14,6 +14,7 @@ class FeatureMixerLayer(nn.Module):
             nn.ReLU(),
             nn.Linear(int(in_dim * mlp_ratio), in_dim),
         )
+        
 
         for m in self.modules():
             if isinstance(m, (nn.Linear)):
@@ -56,7 +57,7 @@ class MixVPR(nn.Module):
         self.row_proj = nn.Linear(hw, out_rows)
 
     def forward(self, x):
-        x = x.flatten(2)
+        x = x.flatten(2)# 使用Spikingformer会报错
         x = self.mix(x)
         x = x.permute(0, 2, 1)
         x = self.channel_proj(x)

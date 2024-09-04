@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision
 import numpy as np
+# from models import helper
 
 class ResNet(nn.Module):
     def __init__(self,
@@ -106,17 +107,17 @@ class ResNet(nn.Module):
 #     print(f'Trainable parameters: {params/1e6:.3}M')
 
 
-# def main():
-#     x = torch.randn(1, 3, 320, 320)
-#     m = ResNet(model_name='resnet50',
-#                pretrained=True,
-#                layers_to_freeze=2,
-#                layers_to_crop=[],)
-#     r = m(x)
-#     helper.print_nb_params(m)
-#     print(f'Input shape is {x.shape}')
-#     print(f'Output shape is {r.shape}')
+def main():
+    x = torch.randn(1, 3, 320, 320)
+    m = ResNet(model_name='resnet50',
+               pretrained=True,
+               layers_to_freeze=2,
+               layers_to_crop=[],)
+    r = m(x)
+    # helper.get_aggregator(m)
+    print(f'Input shape is {x.shape}')
+    print(f'Output shape is {r.shape}')
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()

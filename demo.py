@@ -12,6 +12,9 @@ import cv2
 
 from main import VPRModel
 
+import sys
+sys.path.append('/mnt/c/Users/MRLin/Documents/GitHub/MixVPR/')
+
 
 class BaseDataset(data.Dataset):
     """Dataset with images from database and queries, used for inference (testing and building cache).
